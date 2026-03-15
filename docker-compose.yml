@@ -1,0 +1,11 @@
+name: v0-build
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: v0
+    ports:
+      - "5432:5432"
