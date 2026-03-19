@@ -97,6 +97,7 @@ const ProjectForm = () => {
     };
 
     const {content} = form.watch();
+  
 
     const onSubmit = (values: z.infer<typeof formSchema>) => {
         try {
@@ -149,13 +150,12 @@ const ProjectForm = () => {
         <div className="space-y-2">
           <TextAreaAutosize
             id="content"
-            {...form.register("content")}
+            {...form.register("content", { onBlur: handleBlur })}
             placeholder="e.g., Build a Netflix-style homepage with a hero banner, movie sections, and responsive cards..."
             minRows={4}
             className={cn(
                   "pt-4 resize-none border-none w-full outline-none bg-transparent",
             )}
-            onBlur={handleBlur}
             onFocus={handleFocus}
             disabled={isPending}
             onKeyDown={(e) => {
