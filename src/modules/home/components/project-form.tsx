@@ -96,7 +96,7 @@ const ProjectForm = () => {
         setIsFocused(false);
     };
 
-    const {content} = form.watch();
+    const content = form.watch("content");
   
 
     const onSubmit = (values: z.infer<typeof formSchema>) => {

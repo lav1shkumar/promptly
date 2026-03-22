@@ -1,24 +1,57 @@
 import { inngest } from "./client";
-import { gemini, createAgent } from "@inngest/agent-kit";
+import { gemini, createAgent, createTool } from "@inngest/agent-kit";
+import { Sandbox } from "@e2b/code-interpreter";
+import z from "zod";
 
 
 const model = gemini({ model: "gemini-3.1-flash-lite-preview" });
 
-export const helloWorld = inngest.createFunction(
-  { id: "hello-world", triggers: [{ event: "agent/hello" }] },
+export const codeAgentFunction = inngest.createFunction(
+  { id: "code-agent", triggers: [{ event: "code-agent/run" }] },
 
   async ({ event, step }) => {
-    const helloAgent = createAgent({
-      name:"hello-agent",
-      description:"A simple agent that says hello",
+
+    const sandboxId = await step.run("get-sandbox-id", async () => {
+      const sandbox = await Sandbox.create("lavishxda/v0-clone");
+      return sandbox.sandboxId;
+    })
+
+    const codeAgent = createAgent({
+      name:"code-agent",
+      description:"An agent that writes code",
       model,
-      system:"You are a helpful assistant that greets with enthusiasm.",
+      system:"You are a helpful assistant that writes code.",
+      tools: [
+        // terminal
+        createTool({
+          name: "terminal",
+          description: "Run terminal commands",
+          parameters: z.object({
+            command: z.string(),
+          }),
+          handler: async ({command}, {step}) => {
+            const sandbox = await Sandbox.connect(sandboxId);
+            const result = await sandbox.commands.run(command);
+            return result;
+          }
+        })
+
+        // file system
+        // read file
+      ]
     }); 
 
-    const {output} = await helloAgent.run("Say hello to the user!");
+    const {output} = await codeAgent.run("Write a simple html code for a website");
+
+    const sandboxUrl = await step.run("get-sandbox-url", async () => {
+      const sandbox = await Sandbox.connect(sandboxId);
+      const host = sandbox.getHost(3000);
+      return `http://${host}`;
+    })
 
     return {
       message: "content" in output[0] ? output[0].content : "",
     };
   },
+
 );

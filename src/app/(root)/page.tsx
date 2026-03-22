@@ -2,6 +2,8 @@ import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import ProjectForm from "@/modules/home/components/project-form";
+import { invokeAgent } from "@/modules/home/actions";
+
 
 export default function Page() {
 
@@ -18,6 +20,8 @@ export default function Page() {
 
         <div className="max-w-3xl w-full">
           <ProjectForm/>
+        <Button onClick={invokeAgent}>Say Hello</Button>
+
         </div>
       </section>
     </div>        
