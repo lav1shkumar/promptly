@@ -11,6 +11,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui/spinner'
+import { startDevServer } from '@/modules/webcontainers/container'
+import { useChat } from '@ai-sdk/react';
 
 
 const formSchema = z.object({
@@ -71,9 +73,17 @@ const PROJECT_TEMPLATES = [
 ];
 
 
-const ProjectForm = () => {
+interface ProjectFormProps {
+  onSubmitMessage?: (message: string) => void;
+}
+
+const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
+
     const [isFocused,setIsFocused] = useState(false);
     const [isPending,setIsPending] = useState(false);
+
+    const { messages, sendMessage } = useChat();
+
 
     const router = useRouter();
 
@@ -97,16 +107,20 @@ const ProjectForm = () => {
     };
 
     const content = form.watch("content");
-  
 
-    const onSubmit = (values: z.infer<typeof formSchema>) => {
-        try {
-            console.log(values.content);
-            setIsPending(true);
-            
-        } catch (error) {
-            
-        }
+    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+      try {
+        setIsPending(true);
+
+        await sendMessage({text : values.content});
+
+        form.reset();
+
+      } catch (error) {
+        toast.error("Something went wrong");
+      } finally {
+        setIsPending(false);
+      }
     };
 
   return (
