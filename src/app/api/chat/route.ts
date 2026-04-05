@@ -1,53 +1,64 @@
-import { google } from '@ai-sdk/google';
-import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai';
-import { z } from 'zod';
 import { PROMPT } from '@/prompt';
-import { listFiles, readFile, runCommand, startDevServer, writeFile } from '@/modules/webcontainers/container';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai';
+import Anthropic from "@anthropic-ai/sdk";
 
-export const maxDuration = 30;
+const ai = new GoogleGenAI({});
+const client = new Anthropic();
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { userPrompt, files } = await req.json();
+    const messages = userPrompt + " Current file structure - " + JSON.stringify(files)
 
-  console.log("YES");
 
-  const result = streamText({
-    model: google('gemini-3.1-flash-lite-preview'),
-    system: PROMPT,
-    messages: await convertToModelMessages(messages),
-    stopWhen: stepCountIs(10),
-    tools: {
-      terminal: tool({
-        description: "Use the terminal to run commands (e.g., 'npm install <package>')",
-        inputSchema: z.object({
-          command: z.string(),
-        }),
-      }),
-      createOrUpdateFiles: tool({
-        description: "Create or update files in the WebContainer",
-        inputSchema: z.object({
-          files: z.array(
-            z.object({
-              path: z.string(),
-              content: z.string(),
-            })
-          ),
-        }),
-      }),
-      readFile: tool({
-        description: "Read the contents of one or more files",
-        inputSchema: z.object({
-          file: z.string(),
-        }),
-      }),
-      listFiles: tool({
-        description: "List files in a given directory path",
-        inputSchema: z.object({
-          path: z.string(),
-        }),
-      }),
-    },
-  });
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-lite-preview",
+      contents: messages,
+      config: {
+        systemInstruction: PROMPT,
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.HIGH,
+        },
+      },
+    });
 
-  return result.toUIMessageStreamResponse();
+    const text = response.text;
+
+    return new Response(text, {
+      headers: { "Content-Type": "text/plain" },
+    });
+
+
+  // const response = await client.messages.create({
+  //   model: "claude-sonnet-4-6",
+  //   max_tokens: 5000,
+
+  //   system: PROMPT,
+  //   messages: [
+  //     {
+  //       role: "user",
+  //       content: messages,
+  //     },
+  //   ],
+  // });
+
+  // const text = response.content
+  //   .filter(block => block.type === "text")
+  //   .map(block => block.text)
+  //   .join("\n");
+
+  // console.log(text);
+
+  // return new Response(text, {
+  //   headers: { "Content-Type": "text/plain" },
+  // });
+
+  } catch (error) {
+    console.error(error);
+
+    return new Response(
+      JSON.stringify({ error: "Something went wrong" }),
+      { status: 500 }
+    );
+  }
 }

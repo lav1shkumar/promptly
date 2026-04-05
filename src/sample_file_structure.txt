@@ -1,0 +1,57 @@
+Mental model
+A common package.json file in WebContainers is represented as a data structure of the following shape:
+
+js
+const files = {
+  // This is a file - provide its path as a key:
+  'package.json': {
+    // Because it's a file, add the "file" key
+    file: {
+      // Now add its contents
+      contents: `
+        {
+          "name": "vite-starter",
+          "private": true,
+         // ...
+          },
+          "devDependencies": {
+            "vite": "^4.0.4"
+          }
+        }`,
+    },
+  },
+};
+It is a multiple-level nested object with the first key being the path, the second is called "file", and the third, which contains the actual contents of the file, is called "contents".
+
+Similarly, a folder is represented in WebContainers as follows:
+
+js
+const files = {
+  // This is a directory - provide its name as a key
+  src: {
+    // Because it's a directory, add the "directory" key
+    directory: {
+      // Here we will add files
+    },
+  },
+};
+Folder with a file is represented as follows:
+
+js
+const files = {
+  // This is a directory - provide its name as a key
+  src: {
+    // Because it's a directory, add the "directory" key
+    directory: {
+      // This is a file - provide its path as a key:
+      'main.js': {
+        // Because it's a file, add the "file" key
+        file: {
+          contents: `
+            console.log('Hello from WebContainers!')
+          `,
+        },
+      },
+    },
+  },
+};

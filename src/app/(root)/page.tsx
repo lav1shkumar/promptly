@@ -49,13 +49,6 @@ export default function Page() {
 
           <div className="max-w-3xl w-full flex flex-col items-center gap-4">
             <ProjectForm />
-            <Button 
-              onClick={handleStartServer} 
-              disabled={loading}
-              className="w-full max-w-xs"
-            >
-              {loading ? "Starting dev server..." : "Start dev server"}
-            </Button>
           </div>
         </section>
       </div>
