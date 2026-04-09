@@ -1,6 +1,7 @@
 import { WebContainer } from '@webcontainer/api';
 
 let webcontainerInstance: WebContainer | undefined = undefined;
+let bootPromise: Promise<WebContainer> | null = null;
 
 const files = {
   "package.json": {
@@ -290,10 +291,14 @@ export default function Home() {
 };
 
 export async function initWebContainer() {
-  if (!webcontainerInstance) {
-    webcontainerInstance = await WebContainer.boot();
+  if (webcontainerInstance) return webcontainerInstance;
+  if (!bootPromise) {
+    bootPromise = WebContainer.boot().then((instance) => {
+      webcontainerInstance = instance;
+      return instance;
+    });
   }
-  return webcontainerInstance;
+  return bootPromise;
 }
 
 export async function startDevServer(): Promise<string> {

@@ -93,7 +93,9 @@ export default function XTerminal({ process }: { process: any }) {
 
   useEffect(() => {
     if (!termRef.current) return;
+    
     const isDark = resolvedTheme === "dark";
+
     termRef.current.options.theme = {
       background: "rgba(0,0,0,0)",
       foreground: isDark ? "#e4e4e7" : "#18181b",

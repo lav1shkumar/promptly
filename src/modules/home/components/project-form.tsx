@@ -106,10 +106,7 @@ const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
       try {
         setIsPending(true);
-
-        
-
-        form.reset();
+        await onSubmitMessage?.(values.content);
 
       } catch (error) {
         toast.error("Something went wrong");
