@@ -1,14 +1,18 @@
-import { getProjectById, getUser } from '@/modules/auth/actions';
+import { getUser } from '@/modules/auth/actions';
 import { notFound } from 'next/navigation';
-import ProjectView from '@/modules/project/components/ProjectView';
+import ProjectView from '@/components/project/ProjectView';
 import { FileSystemTree } from '@webcontainer/api';
+import { getProjectById } from '@/modules/updates';
 
 interface PageProps {
-    params: Promise<{ projectId: string }>;
+    params: Promise<{ 
+        projectId: string
+        message: string
+     }>;
 }
 
 const ProjectPage = async ({ params }: PageProps) => {
-    const { projectId } = await params;
+    const { projectId, message } = await params;
 
     const userResponse = await getUser();
     if (!userResponse.success || !userResponse.user) {
@@ -26,6 +30,7 @@ const ProjectPage = async ({ params }: PageProps) => {
         <ProjectView 
             projectId={projectId} 
             initialFiles={initialFiles} 
+            message={message}
         />
     );
 }

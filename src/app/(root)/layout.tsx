@@ -1,6 +1,6 @@
 import React from "react";
 import { handleSignUp } from "@/modules/auth/actions";
-import Navbar from "@/modules/home/components/navbar";
+import Navbar from "@/components/navbar";
 
 const Layout = async ({
   children,

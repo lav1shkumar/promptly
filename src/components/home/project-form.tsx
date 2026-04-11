@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import {z} from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
-import TextAreaAutosize from 'react-textarea-autosize'
-import { ArrowUpIcon, Loader2Icon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { Spinner } from '@/components/ui/spinner'
-
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import TextAreaAutosize from "react-textarea-autosize";
+import { ArrowUpIcon, Loader2Icon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { Spinner } from "@/components/ui/spinner";
 
 const formSchema = z.object({
-    content: z.string()
-    .min(1,"Project Discription Required!")
+  content: z
+    .string()
+    .min(1, "Project Discription Required!")
     .max(500, "Description is too long"),
-})
+});
 
 const PROJECT_TEMPLATES = [
   {
@@ -70,54 +70,52 @@ const PROJECT_TEMPLATES = [
   },
 ];
 
-
 interface ProjectFormProps {
   onSubmitMessage?: (message: string) => void;
 }
 
 const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
-    const [isFocused,setIsFocused] = useState(false);
-    const [isPending,setIsPending] = useState(false);
+  const router = useRouter();
 
-    const router = useRouter();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      content: "",
+    },
+  });
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            content: "",
-        },
-    });
+  const handleTemplateClick = (prompt: string) => {
+    form.setValue("content", prompt);
+  };
 
-    const handleTemplateClick = (prompt: string) => {
-        form.setValue("content", prompt);
-    };
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
 
-    const handleFocus = () => {
-        setIsFocused(true);
-    };
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
 
-    const handleBlur = () => {
-        setIsFocused(false);
-    };
+  const content = form.watch("content");
 
-    const content = form.watch("content");
-
-    const onSubmit = async (values: z.infer<typeof formSchema>) => {
-      try {
-        setIsPending(true);
-        await onSubmitMessage?.(values.content);
-
-      } catch (error) {
-        toast.error("Something went wrong");
-      } finally {
-        setIsPending(false);
-      }
-    };
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      setIsPending(true);
+      form.reset();
+      await onSubmitMessage?.(values.content);
+    } catch (error) {
+      toast.error("Something went wrong");
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   return (
-    <div className='space-y-8'>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {PROJECT_TEMPLATES.map((template, index) => (
           <button
             key={index}
@@ -133,7 +131,7 @@ const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
                 {template.title}
               </h3>
             </div>
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+            <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
           </button>
         ))}
       </div>
@@ -149,10 +147,13 @@ const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
         </div>
       </div>
 
-        <form onSubmit={form.handleSubmit(onSubmit)}  className={cn(
-            "relative border p-4 pt-1 rounded-xl bg-sidebar dark:bg-sidebar transition-all",
-            isFocused && "shadow-lg ring-2 ring-primary/20"
-          )}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={cn(
+          "relative border p-4 pt-1 rounded-xl bg-sidebar dark:bg-sidebar transition-all",
+          isFocused && "shadow-lg ring-2 ring-primary/20",
+        )}
+      >
         <div className="space-y-2">
           <TextAreaAutosize
             id="content"
@@ -160,46 +161,43 @@ const ProjectForm = ({ onSubmitMessage }: ProjectFormProps) => {
             placeholder="e.g., Build a Netflix-style homepage with a hero banner, movie sections, and responsive cards..."
             minRows={4}
             className={cn(
-                  "pt-4 resize-none border-none w-full outline-none bg-transparent",
+              "pt-4 resize-none border-none w-full outline-none bg-transparent",
             )}
             onFocus={handleFocus}
             disabled={isPending}
             onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                    e.preventDefault();
-                    form.handleSubmit(onSubmit)(e);
-                  }
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                form.handleSubmit(onSubmit)(e);
+              }
             }}
           />
 
           <div className="flex justify-between items-center">
-            <span className='text-xs text-muted-foreground'>{content.length}/500 characters</span>
+            <span className="text-xs text-muted-foreground">
+              {content.length}/500 characters
+            </span>
 
             <Button
-            className={cn("size-8 rounded-full" , 
-              isPending && "bg-muted-foreground border"
-            )}
-            disabled={isPending}
-            type="submit"
+              className={cn(
+                "size-8 rounded-full",
+                isPending && "bg-muted-foreground border",
+              )}
+              disabled={isPending}
+              type="submit"
             >
-              {
-                isPending ? (<Spinner/>) : (<ArrowUpIcon className="size-4"/>)
-              }
-                
+              {isPending ? <Spinner /> : <ArrowUpIcon className="size-4" />}
             </Button>
-            
-         </div>
+          </div>
           {form.formState.errors.content && (
             <p className="text-sm text-destructive">
               {form.formState.errors.content.message}
             </p>
           )}
-
         </div>
-
       </form>
     </div>
-  )
-}
+  );
+};
 
-export default ProjectForm
+export default ProjectForm;

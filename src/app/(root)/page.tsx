@@ -4,10 +4,10 @@ import { useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import ProjectForm from "@/modules/home/components/project-form";
+import ProjectForm from "@/components/home/project-form";
 import { useRouter } from "next/navigation";
-import { createProject } from "@/modules/auth/actions";
 import { toast } from "sonner";
+import { createProject } from "@/modules/updates";
 
 
 export default function Page() {
@@ -15,6 +15,7 @@ export default function Page() {
 
   const handleSubmit = async (message: string) => {
     try {
+      
       const newProject = await createProject(message);
       
       if(!newProject.success) {
