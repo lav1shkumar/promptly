@@ -7,11 +7,13 @@ const ChatWindow = ({
   messages,
   setMessages,
   onMessagesLoaded,
+  isProcessing,
 }: {
   projectId: string;
   messages: any[];
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
   onMessagesLoaded?: (messages: any[]) => void;
+  isProcessing?: boolean;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -32,7 +34,7 @@ const ChatWindow = ({
       const data = await response.json();
       const loadedMessages = data.messages || [];
       setMessages(loadedMessages);
-      
+
       if (onMessagesLoaded) {
         onMessagesLoaded(loadedMessages);
       }
@@ -99,6 +101,23 @@ const ChatWindow = ({
               </div>
             </div>
           ))
+        )}
+        {isProcessing && (
+          <div className="flex items-start gap-3 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 flex-row">
+            <div className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-muted border border-border">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="max-w-[80%] rounded-2xl px-4 py-3 shadow-sm text-sm leading-relaxed bg-muted/80 text-foreground border border-border rounded-tl-none flex items-center gap-2">
+              <span className="flex gap-1 mr-2">
+                <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" />
+              </span>
+              <span className="text-muted-foreground font-medium animate-pulse">
+                Thinking...
+              </span>
+            </div>
+          </div>
         )}
       </div>
     </div>

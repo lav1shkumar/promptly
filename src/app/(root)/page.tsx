@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { UserButton } from "@clerk/nextjs";
+
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import ProjectForm from "@/components/home/project-form";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";

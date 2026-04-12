@@ -1,11 +1,29 @@
-name: v0-build
+name: promptly
 
 services:
   db:
-    image: postgres:latest
+    image: postgres:15-alpine
+    restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: v0
+      POSTGRES_DB: promptly
     ports:
       - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:password@db:5432/promptly
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

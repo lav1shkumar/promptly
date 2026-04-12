@@ -8,7 +8,7 @@ import { downloadZip } from "@/modules/helpers/build-zip";
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import PromptInput from "@/components/project/prompt-input";
-import { ArrowLeft, ArrowRight, Download, RotateCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, ExternalLink, RotateCw } from "lucide-react";
 import ChatWindow from "@/components/project/chat";
 import { toast } from "sonner";
 import { getWebContainer } from "@/modules/helpers/web-container";
@@ -266,6 +266,7 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
                   messages={messages}
                   setMessages={setMessages}
                   onMessagesLoaded={handleMessagesLoaded}
+                  isProcessing={isProcessing}
                 />
               </div>
 
@@ -339,6 +340,16 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
                   title="Refresh"
                 >
                   <RotateCw className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (devServerUrl) window.open(devServerUrl, "_blank");
+                  }}
+                  title="Open in new tab"
+                >
+                  <ExternalLink className="w-4 h-4" />
                 </Button>
                 <Button
                   variant="outline"

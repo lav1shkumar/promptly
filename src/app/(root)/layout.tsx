@@ -2,6 +2,8 @@ import React from "react";
 import { handleSignUp } from "@/modules/auth/actions";
 import Navbar from "@/components/navbar";
 
+export const dynamic = "force-dynamic";
+
 const Layout = async ({
   children,
 }: Readonly<{
