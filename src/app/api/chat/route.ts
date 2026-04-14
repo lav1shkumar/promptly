@@ -89,7 +89,17 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toTextStreamResponse();
+    const response = result.toTextStreamResponse();
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        ...Object.fromEntries(response.headers.entries()),
+        "X-Accel-Buffering": "no",
+        "Cache-Control": "no-cache, no-transform",
+        "Connection": "keep-alive",
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(
