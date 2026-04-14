@@ -255,38 +255,8 @@ export default function RootLayout({
               contents: `
 export default function Home() {
   return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center justify-center px-6">
-      
-      <div className="text-center max-w-2xl">
-        <h1 className="text-5xl font-bold tracking-tight">
-          Build Something Powerful
-        </h1>
-
-        <p className="mt-4 text-gray-400 text-lg">
-          A simple AI-powered development environment. Start building, editing, and running code directly in your browser.
-        </p>
-
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <a
-            href="/chat"
-            className="px-6 py-3 bg-white text-black rounded-xl font-medium hover:bg-gray-200 transition"
-          >
-            Start Chat
-          </a>
-
-          <a
-            href="https://nextjs.org"
-            target="_blank"
-            className="px-6 py-3 border border-gray-700 rounded-xl hover:bg-gray-900 transition"
-          >
-            Learn More
-          </a>
-        </div>
-      </div>
-
-      <div className="absolute bottom-6 text-sm text-gray-500">
-        Built with Next.js + AI SDK
-      </div>
+    <main className="min-h-screen flex items-center justify-center">
+      <h1 className="text-2xl font-bold">Welcome</h1>
     </main>
   );
 }

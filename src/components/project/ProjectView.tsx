@@ -5,13 +5,24 @@ import { CodeView } from "@/components/project/code-view";
 import { FileSystemTree, WebContainer } from "@webcontainer/api";
 import { applyPatchesToTree } from "@/modules/helpers/normalize-tree";
 import { downloadZip } from "@/modules/helpers/build-zip";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import PromptInput from "@/components/project/prompt-input";
-import { ArrowLeft, ArrowRight, Download, ExternalLink, RotateCw } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Download,
+  ExternalLink,
+  FileEdit,
+  Loader2,
+  RotateCw,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import ChatWindow from "@/components/project/chat";
 import { toast } from "sonner";
 import { getWebContainer } from "@/modules/helpers/web-container";
+import { useCompletion } from "@ai-sdk/react";
 
 const XTerminal = dynamic(() => import("@/components/project/terminal"), {
   ssr: false,
@@ -33,6 +44,105 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const hasAutoTriggered = useRef(false);
+  const [currentStatus, setCurrentStatus] = useState<string>("");
+  const [fileOperations, setFileOperations] = useState<
+    { type: string; path: string }[]
+  >([]);
+
+  const { complete, completion, isLoading } = useCompletion({
+    api: "/api/chat",
+    streamProtocol: "text",
+
+    onFinish: async (prompt, resultText) => {
+      setIsProcessing(true);
+      setCurrentStatus("Finalizing changes...");
+      try {
+        const data = JSON.parse(resultText);
+        const { files: patches, summary } = data;
+
+        console.log("Received patches:", patches);
+        console.log("Received summary:", summary);
+
+        const updatedFiles = applyPatchesToTree(files, patches);
+
+        const formattedSummary = Array.isArray(summary)
+          ? summary.map((item, index) => `${index + 1}. ${item}`).join("\n")
+          : summary;
+
+        const res = await fetch("/api/messages/addmessages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId,
+            files: updatedFiles,
+            message: formattedSummary,
+            role: "ASSISTANT",
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Failed to add message");
+        }
+
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { role: "ASSISTANT", content: formattedSummary },
+        ]);
+
+        const projectRes = await fetch("/api/project/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            projectId,
+            files: updatedFiles,
+          }),
+        });
+
+        if (!projectRes.ok) throw new Error("Failed to update project");
+
+        toast.success("Project updated successfully");
+        setFiles(updatedFiles);
+        window.dispatchEvent(new CustomEvent("userUpdated"));
+      } catch (e) {
+        console.error("Failed to parse or apply final result:", e);
+        toast.error("Failed to apply the AI updates.");
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+
+    onError: (error) => {
+      toast.error(error.message || "An error occurred");
+      setIsProcessing(false);
+    },
+  });
+
+  useEffect(() => {
+    if (completion) {
+      const allOps = [
+        ...completion.matchAll(
+          /"type":\s*"([^"]+)"[^]*?"path":\s*"([^"]+)"/g,
+        ),
+      ];
+
+      if (allOps.length > 0) {
+        const ops = allOps.map((match) => ({
+          type: match[1],
+          path: match[2],
+        }));
+
+        setFileOperations(ops);
+
+        const last = ops[ops.length - 1];
+        setCurrentStatus(
+          last.type === "write"
+            ? `Updating ${last.path}`
+            : `Deleting ${last.path}`,
+        );
+      }
+    }
+  }, [completion]);
 
   const handleMessagesLoaded = async (loadedMessages: any[]) => {
     if (
@@ -44,81 +154,18 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
       if (lastMessage.role === "USER") {
         hasAutoTriggered.current = true;
         setIsProcessing(true);
-        try {
-          await send_request(lastMessage.content);
-        } finally {
-          setIsProcessing(false);
-        }
+        await send_request(lastMessage.content);
       }
     }
   };
 
   const send_request = async (userPrompt: string) => {
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userPrompt, files: files }),
+    setCurrentStatus("Thinking...");
+    setFileOperations([]);
+
+    complete(userPrompt, {
+      body: { files: files },
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      toast.error(data.error);
-      setIsProcessing(false);
-      return;
-    }
-
-    try {
-      const { files: patches, summary } = data;
-      console.log("Received patches:", patches);
-      console.log("Received summary:", summary);
-
-      const updatedFiles = applyPatchesToTree(files, patches);
-
-      const res = await fetch("/api/messages/addmessages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          files: updatedFiles,
-          message: summary,
-          role: "ASSISTANT",
-        }),
-      });
-
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { role: "ASSISTANT", content: summary },
-      ]);
-
-      if (!res.ok) {
-        toast.error("Failed to add message");
-        setIsProcessing(false);
-        return;
-      }
-
-      const Response = await fetch("/api/project/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId,
-          files: updatedFiles,
-        }),
-      });
-
-      console.log(Response);
-
-      if (!Response.ok) {
-        toast.error("Failed to update project");
-        setIsProcessing(false);
-        return;
-      }
-      toast.success("Project updated successfully");
-      setFiles(updatedFiles);
-      window.dispatchEvent(new CustomEvent("userUpdated"));
-    } catch (e) {
-      console.error("Failed to apply patches:", e);
-    }
   };
 
   const mountFiles = async () => {
@@ -227,10 +274,10 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
         await send_request(userPrompt);
       } else {
         toast.error(data.message);
+        setIsProcessing(false);
       }
     } catch (error) {
       console.error("Failed to send request to AI:", error);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -266,7 +313,8 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
                   messages={messages}
                   setMessages={setMessages}
                   onMessagesLoaded={handleMessagesLoaded}
-                  isProcessing={isProcessing}
+                  isProcessing={isLoading || isProcessing}
+                  status={currentStatus}
                 />
               </div>
 
@@ -286,7 +334,7 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
           </div>
         </div>
 
-        {!isProcessing && (
+        {!isProcessing && !isLoading && (
           <div className="flex flex-col col-span-2 w-full h-full border border-primary rounded-md overflow-hidden">
             <div className="flex items-center gap-2 p-2 border-b border-primary bg-accent">
               <Button
@@ -398,19 +446,116 @@ const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
             </div>
           </div>
         )}
-        {isProcessing && (
-          <div className="flex flex-col col-span-2 w-full h-full border border-primary rounded-md overflow-hidden">
-            <div className="flex flex-col items-center justify-center h-full gap-4">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-full border-2 border-muted-foreground/20 border-t-primary animate-spin" />
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <p className="text-sm font-medium text-foreground animate-pulse">
-                  Processing AI request...
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Applying changes to filesystem
-                </p>
+        {(isLoading || isProcessing) && (
+          <div className="flex flex-col col-span-2 w-full h-full border border-primary rounded-md overflow-hidden bg-background">
+            <div className="flex items-center gap-2 p-3 border-b border-border bg-accent">
+              <Loader2 className="w-4 h-4 animate-spin text-primary" />
+              <span className="text-sm font-medium text-foreground">
+                {currentStatus || "Generating..."}
+              </span>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="max-w-lg mx-auto">
+                {fileOperations.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                      <div className="relative w-12 h-12 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
+                        <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <p className="text-sm font-medium text-foreground">
+                        Analyzing your request
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        The AI is planning the changes...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {fileOperations.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
+                        File Operations
+                      </span>
+                      <div className="h-px flex-1 bg-border" />
+                    </div>
+
+                    {fileOperations.map((op, idx) => {
+                      const isLast = idx === fileOperations.length - 1;
+                      const isWrite = op.type === "write";
+
+                      return (
+                        <div
+                          key={`${op.path}-${idx}`}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-500"
+                          style={{
+                            animation: `fadeSlideIn 0.4s ease-out ${idx * 0.05}s both`,
+                            backgroundColor: isLast
+                              ? "var(--accent)"
+                              : "transparent",
+                          }}
+                        >
+                          <div
+                            className={`shrink-0 w-7 h-7 rounded-md flex items-center justify-center transition-colors duration-300 ${
+                              isLast
+                                ? isWrite
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-destructive/15 text-destructive"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {isWrite ? (
+                              <FileEdit className="w-3.5 h-3.5" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-xs font-mono truncate ${
+                                isLast
+                                  ? "text-foreground font-medium"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {op.path}
+                            </p>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isLast && isLoading ? (
+                              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin" />
+                            ) : (
+                              <div className="w-3.5 h-3.5 rounded-full bg-primary/20 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {isLoading && (
+                      <div className="flex items-center gap-2 px-3 pt-3">
+                        <div className="flex gap-1">
+                          <span className="w-1 h-1 rounded-full bg-primary/40 animate-bounce [animation-delay:-0.3s]" />
+                          <span className="w-1 h-1 rounded-full bg-primary/40 animate-bounce [animation-delay:-0.15s]" />
+                          <span className="w-1 h-1 rounded-full bg-primary/40 animate-bounce" />
+                        </div>
+                        <span className="text-[11px] text-muted-foreground">
+                          Writing file contents...
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

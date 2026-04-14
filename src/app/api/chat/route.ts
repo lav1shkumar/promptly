@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { runChat } from "@/lib/ai/chat";
 import { globalRateLimiter } from "@/lib/rate-limit";
 import db from "@/lib/db";
+import { flattenTree } from "@/modules/helpers/normalize-tree";
+import { streamText } from "ai";
+import { google } from "@ai-sdk/google";
+import { createVertex } from "@ai-sdk/google-vertex";
+import { SYSTEM_PROMPT } from "@/prompt";
+
+export const maxDuration = 300;
+
+const vertex = createVertex({
+  project: process.env.GOOGLE_VERTEX_PROJECT,
+  location: process.env.GOOGLE_VERTEX_LOCATION,
+  googleAuthOptions: {
+    credentials: {
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_PRIVATE_KEY,
+    },
+  },
+});
 
 export async function POST(req: Request) {
   try {
@@ -14,23 +31,17 @@ export async function POST(req: Request) {
     try {
       await globalRateLimiter.check(5, ip);
     } catch {
-      return new NextResponse(
-        JSON.stringify({
-          error: "Too Many Requests",
-          code: "TOO_MANY_REQUESTS",
-        }),
-        { status: 429, headers: { "Content-Type": "application/json" } },
+      return NextResponse.json(
+        { error: "Too Many Requests", code: "TOO_MANY_REQUESTS" },
+        { status: 429 },
       );
     }
 
     const { userId } = await auth();
     if (!userId) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "Unauthorized",
-          code: "UNAUTHORIZED",
-        }),
-        { status: 401, headers: { "Content-Type": "application/json" } },
+      return NextResponse.json(
+        { error: "Unauthorized", code: "UNAUTHORIZED" },
+        { status: 401 },
       );
     }
 
@@ -39,41 +50,51 @@ export async function POST(req: Request) {
     });
 
     if (!dbUser) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "User not found",
-          code: "USER_NOT_FOUND",
-        }),
-        { status: 404, headers: { "Content-Type": "application/json" } },
+      return NextResponse.json(
+        { error: "User not found", code: "USER_NOT_FOUND" },
+        { status: 404 },
       );
     }
 
     if (dbUser.tokens <= 0) {
-      return new NextResponse(
-        JSON.stringify({
-          error: "Insufficient tokens",
-          code: "OUT_OF_TOKENS",
-        }),
-        { status: 402, headers: { "Content-Type": "application/json" } },
+      return NextResponse.json(
+        { error: "Insufficient tokens", code: "OUT_OF_TOKENS" },
+        { status: 402 },
       );
     }
 
-    const { userPrompt, files } = await req.json();
+    const { prompt: userPrompt, files } = await req.json();
 
-    const result = await runChat(userPrompt, files);
+    const flatFiles = flattenTree(files);
 
-    if (result.status === 200) {
-      await db.user.update({
-        where: { clerkId: userId },
-        data: { tokens: dbUser.tokens - 10 },
-      });
-    }
+    const messages = `USER REQUEST: ${userPrompt}\n\nCURRENT CODEBASE:\n${JSON.stringify(flatFiles)}`;
 
-    return result;
+    const result = await streamText({
+      model: vertex("gemini-3-flash-preview"),
+      system: SYSTEM_PROMPT,
+      prompt: messages,
+
+      onFinish: async ({ finishReason }) => {
+        if (finishReason === "stop") {
+          try {
+            await db.user.update({
+              where: { clerkId: userId },
+              data: { tokens: dbUser.tokens - 10 },
+            });
+            console.log(`✅ Deducted 10 tokens from user ${userId}`);
+          } catch (dbError) {
+            console.error("Failed to deduct tokens after stream:", dbError);
+          }
+        }
+      },
+    });
+
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error("Chat API error:", error);
-    return new Response(JSON.stringify({ error: "Something went wrong" }), {
-      status: 500,
-    });
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 },
+    );
   }
 }

@@ -8,12 +8,14 @@ const ChatWindow = ({
   setMessages,
   onMessagesLoaded,
   isProcessing,
+  status,
 }: {
   projectId: string;
   messages: any[];
   setMessages: React.Dispatch<React.SetStateAction<any[]>>;
   onMessagesLoaded?: (messages: any[]) => void;
   isProcessing?: boolean;
+  status?: string;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +116,7 @@ const ChatWindow = ({
                 <span className="w-1.5 h-1.5 bg-foreground/50 rounded-full animate-bounce" />
               </span>
               <span className="text-muted-foreground font-medium animate-pulse">
-                Thinking...
+                {status || "Thinking..."}
               </span>
             </div>
           </div>
