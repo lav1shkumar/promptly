@@ -3,18 +3,17 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
-import { 
-  FolderIcon, 
-  Clock, 
-  ArrowUpRight, 
-  FileCode2, 
-  Plus, 
+import {
+  FolderIcon,
+  Clock,
+  ArrowUpRight,
+  FileCode2,
+  Plus,
   Search,
   Layout,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import { Spinner } from "../ui/spinner";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Project {
@@ -59,14 +58,18 @@ const ProjectHistory = () => {
     if (diffInHours < 24) return `${diffInHours}h ago`;
     const diffInDays = Math.floor(diffInHours / 24);
     if (diffInDays < 7) return `${diffInDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   };
 
   const handleDelete = async (e: React.MouseEvent, projectId: string) => {
-    e.stopPropagation(); // Prevent card click redirect
+    e.stopPropagation();
 
-    if (!window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this project? This action cannot be undone.",
+      )
+    ) {
       return;
     }
 
@@ -103,7 +106,9 @@ const ProjectHistory = () => {
     return (
       <div className="w-full py-20 flex flex-col items-center justify-center gap-3">
         <Spinner className="w-8 h-8 text-primary" />
-        <p className="text-sm text-muted-foreground animate-pulse">Loading project history...</p>
+        <p className="text-sm text-muted-foreground animate-pulse">
+          Loading project history...
+        </p>
       </div>
     );
   }
@@ -125,7 +130,7 @@ const ProjectHistory = () => {
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-8">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -168,7 +173,7 @@ const ProjectHistory = () => {
                   <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
-              
+
               <div className="space-y-1">
                 <h3 className="font-bold text-base truncate pr-6 group-hover:text-primary transition-colors">
                   {project.name}
@@ -184,15 +189,15 @@ const ProjectHistory = () => {
               <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/70">
                 #{project.id.slice(-6).toUpperCase()}
               </span>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="h-8 px-2 text-xs font-semibold hover:bg-primary/10 hover:text-primary"
               >
                 Open Project
               </Button>
             </div>
-            
+
             {/* Gloss effect overlay */}
             <div className="absolute inset-0 rounded-xl bg-linear-to-br from-white/5 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>

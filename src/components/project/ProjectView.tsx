@@ -28,10 +28,13 @@ const XTerminal = dynamic(() => import("@/components/project/terminal"), {
   ssr: false,
 });
 
+
 interface ProjectViewProps {
   projectId: string;
+  projectName: string;
   initialFiles: FileSystemTree;
 }
+
 
 const extractJson = (text: string) => {
   const firstBrace = text.indexOf("{");
@@ -42,7 +45,12 @@ const extractJson = (text: string) => {
   return text;
 };
 
-const ProjectView = ({ projectId, initialFiles }: ProjectViewProps) => {
+const ProjectView = ({
+  projectId,
+  projectName,
+  initialFiles,
+}: ProjectViewProps) => {
+  
   const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
   const [files, setFiles] = useState<FileSystemTree>(initialFiles);
   const [devServerUrl, setDevServerUrl] = useState<string | null>(null);

@@ -36,7 +36,7 @@ export default function Page() {
               alt="Logo"
               width={400}
               height={400}
-              className="dark:invert md:block hidden"
+              className="invert dark:invert-0 md:block hidden"
             />
           </div>
           <h1 className="text-4xl md:text-6xl text-center font-bold">

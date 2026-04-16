@@ -20,7 +20,7 @@ const Navbar = () => {
   const [tier, setTier] = React.useState<string | null>(null);
 
   const router = useRouter();
-  
+
   useEffect(() => {
     const fetchUser = () => {
       getUser().then((res) => {
@@ -46,7 +46,7 @@ const Navbar = () => {
             alt="Logo"
             width={50}
             height={50}
-            className="dark:invert"
+            className="invert dark:invert-0"
             onClick={() => router.push("/")}
           />
         </div>

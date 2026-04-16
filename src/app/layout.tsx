@@ -21,13 +21,20 @@ export const metadata: Metadata = {
     template: "%s | Promptly",
   },
   description: "Build and deploy AI-powered web applications in seconds.",
-  keywords: ["AI", "Coding Assistant", "Full-stack Developer", "AI Agents", "Next.js", "WebContainers"],
-  authors: [{ name: "Promptly Team" }],
-  creator: "Promptly",
+  keywords: [
+    "AI",
+    "Coding Assistant",
+    "Full-stack Developer",
+    "AI Agents",
+    "Next.js",
+    "WebContainers",
+  ],
+  authors: [{ name: "Lavish" }],
+  creator: "Lavish",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://promptly.com",
+    url: "https://promptly.lav1sh.online",
     siteName: "Promptly",
     title: "Promptly - AI Development Environment",
     description: "Build and deploy AI-powered web applications in seconds.",
@@ -47,7 +54,7 @@ export const metadata: Metadata = {
     images: ["/logo_large.svg"],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.svg",
     apple: "/logo.svg",
   },
 };
@@ -59,9 +66,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ClerkProvider>
           <ThemeProvider
             attribute="class"
@@ -73,8 +80,7 @@ export default function RootLayout({
             {children}
           </ThemeProvider>
         </ClerkProvider>
-        </body>
-
+      </body>
     </html>
   );
 }

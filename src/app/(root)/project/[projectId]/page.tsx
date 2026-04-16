@@ -4,6 +4,7 @@ import ProjectView from "@/components/project/ProjectView";
 import { FileSystemTree } from "@webcontainer/api";
 import { getProjectById } from "@/modules/updates";
 
+
 interface PageProps {
   params: Promise<{
     projectId: string;
@@ -26,7 +27,13 @@ const ProjectPage = async ({ params }: PageProps) => {
   const initialFiles = projectResponse.project
     .files as unknown as FileSystemTree;
 
-  return <ProjectView projectId={projectId} initialFiles={initialFiles} />;
+  return (
+    <ProjectView
+      projectId={projectId}
+      projectName={projectResponse.project.name}
+      initialFiles={initialFiles}
+    />
+  );
 };
 
 export default ProjectPage;
