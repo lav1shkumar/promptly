@@ -30,13 +30,11 @@ const XTerminal = dynamic(() => import("@/components/project/terminal"), {
   ssr: false,
 });
 
-
 interface ProjectViewProps {
   projectId: string;
   projectName: string;
   initialFiles: FileSystemTree;
 }
-
 
 const extractJson = (text: string) => {
   const firstBrace = text.indexOf("{");
@@ -52,7 +50,6 @@ const ProjectView = ({
   projectName,
   initialFiles,
 }: ProjectViewProps) => {
-  
   const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
   const [files, setFiles] = useState<FileSystemTree>(initialFiles);
   const [devServerUrl, setDevServerUrl] = useState<string | null>(null);
@@ -210,6 +207,9 @@ const ProjectView = ({
 
     const devProcess = await webcontainer.spawn("npm", ["run", "dev"]);
     setProcess(devProcess);
+
+    const bash = await webcontainer.spawn("bash");
+    setProcess(bash);
 
     webcontainer.on("server-ready", (port, url) => {
       // console.log("Server ready");

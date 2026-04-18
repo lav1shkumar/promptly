@@ -40,9 +40,9 @@ export const createProject = async (message: string) => {
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "dev": "next dev",
     "build": "next build",
-    "start": "next start -H 0.0.0.0 -p 3000"
+    "start": "next start"
   },
   "dependencies": {
     "next": "^14.2.5",
