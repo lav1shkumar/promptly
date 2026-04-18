@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
+import ModelSelector from "@/components/ui/model-selector";
+import { DEFAULT_MODEL } from "@/lib/ai-models";
+import type { AIModelId } from "@/lib/ai-models";
 
 const formSchema = z.object({
   content: z
@@ -19,12 +22,13 @@ const formSchema = z.object({
 });
 
 interface ProjectFormProps {
-  onSubmitMessage?: (message: string) => Promise<any>;
+  onSubmitMessage?: (message: string, model: AIModelId) => Promise<any>;
 }
 
 const PromptInput = ({ onSubmitMessage }: ProjectFormProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [selectedModel, setSelectedModel] = useState<AIModelId>(DEFAULT_MODEL as AIModelId);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,7 +51,7 @@ const PromptInput = ({ onSubmitMessage }: ProjectFormProps) => {
     try {
       setIsPending(true);
       form.reset();
-      await onSubmitMessage?.(values.content);
+      await onSubmitMessage?.(values.content, selectedModel);
     } catch (error) {
       toast.error("Something went wrong");
     } finally {
@@ -84,9 +88,16 @@ const PromptInput = ({ onSubmitMessage }: ProjectFormProps) => {
         />
 
         <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            {content.length}/500 characters
-          </span>
+          <div className="flex items-center gap-3">
+            <ModelSelector
+              value={selectedModel}
+              onChange={setSelectedModel}
+              disabled={isPending}
+            />
+            <span className="text-xs text-muted-foreground">
+              {content.length}/500 characters
+            </span>
+          </div>
 
           <Button
             className={cn(

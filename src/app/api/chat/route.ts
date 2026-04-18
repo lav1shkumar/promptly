@@ -4,7 +4,7 @@ import { globalRateLimiter } from "@/lib/rate-limit";
 import db from "@/lib/db";
 import { flattenTree } from "@/modules/helpers/normalize-tree";
 import { streamText } from "ai";
-import { vertex, DEFAULT_MODEL } from "@/lib/ai";
+import { vertex, DEFAULT_MODEL, VALID_MODEL_IDS } from "@/lib/ai";
 import { SYSTEM_PROMPT } from "@/prompt";
 
 export const maxDuration = 300;
@@ -51,7 +51,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { prompt: userPrompt, files } = await req.json();
+    const {
+      prompt: userPrompt,
+      files,
+      model: requestedModel,
+    } = await req.json();
+
+    const selectedModel =
+      requestedModel && VALID_MODEL_IDS.includes(requestedModel)
+        ? requestedModel
+        : DEFAULT_MODEL;
 
     const flatFiles = flattenTree(files);
 
@@ -61,14 +70,6 @@ export async function POST(req: Request) {
       model: vertex(DEFAULT_MODEL),
       system: SYSTEM_PROMPT,
       prompt: messages,
-      maxOutputTokens: 8000,
-      providerOptions: {
-        vertex: {
-          thinkingConfig: {
-            thinkingLevel: "low",
-          },
-        },
-      },
 
       onFinish: async ({ finishReason }) => {
         if (finishReason === "stop") {
@@ -77,7 +78,7 @@ export async function POST(req: Request) {
               where: { clerkId: userId },
               data: { tokens: dbUser.tokens - 10 },
             });
-            console.log(`✅ Deducted 10 tokens from user ${userId}`);
+            console.log(`Deducted 10 tokens from user ${userId}`);
           } catch (dbError) {
             console.error("Failed to deduct tokens after stream:", dbError);
           }

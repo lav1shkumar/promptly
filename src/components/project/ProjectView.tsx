@@ -23,6 +23,8 @@ import ChatWindow from "@/components/project/chat";
 import { toast } from "sonner";
 import { getWebContainer } from "@/modules/helpers/web-container";
 import { useCompletion } from "@ai-sdk/react";
+import { DEFAULT_MODEL } from "@/lib/ai-models";
+import type { AIModelId } from "@/lib/ai-models";
 
 const XTerminal = dynamic(() => import("@/components/project/terminal"), {
   ssr: false,
@@ -65,6 +67,7 @@ const ProjectView = ({
   const [fileOperations, setFileOperations] = useState<
     { type: string; path: string }[]
   >([]);
+  const selectedModelRef = useRef<AIModelId>(DEFAULT_MODEL as AIModelId);
 
   const { complete, completion, isLoading } = useCompletion({
     api: "/api/chat",
@@ -175,12 +178,15 @@ const ProjectView = ({
     }
   };
 
-  const send_request = async (userPrompt: string) => {
+  const send_request = async (userPrompt: string, model?: AIModelId) => {
     setCurrentStatus("Thinking...");
     setFileOperations([]);
 
+    const modelToUse = model || selectedModelRef.current;
+    selectedModelRef.current = modelToUse;
+
     complete(userPrompt, {
-      body: { files: files },
+      body: { files: files, model: modelToUse },
     });
   };
 
@@ -271,8 +277,9 @@ const ProjectView = ({
     });
   };
 
-  const handleClick = async (userPrompt: string) => {
+  const handleClick = async (userPrompt: string, model: AIModelId) => {
     setIsProcessing(true);
+    selectedModelRef.current = model;
     try {
       const res = await fetch("/api/messages/addmessages", {
         method: "POST",
@@ -287,7 +294,7 @@ const ProjectView = ({
           { role: "USER", content: userPrompt },
         ]);
 
-        await send_request(userPrompt);
+        await send_request(userPrompt, model);
       } else {
         toast.error(data.message);
         setIsProcessing(false);

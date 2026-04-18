@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createProject } from "@/modules/updates";
 import ProjectHistory from "@/components/home/project-history";
+import type { AIModelId } from "@/lib/ai-models";
 
 export default function Page() {
   const router = useRouter();
 
-  const handleSubmit = async (message: string) => {
+  const handleSubmit = async (message: string, model: AIModelId) => {
     try {
       const newProject = await createProject(message);
 
