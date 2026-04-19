@@ -9,5 +9,6 @@ export {
   LIGHT_MODEL,
   AI_MODELS,
   VALID_MODEL_IDS,
+  getModelTokenCost,
 } from "./ai-models";
 export type { AIModelId } from "./ai-models";

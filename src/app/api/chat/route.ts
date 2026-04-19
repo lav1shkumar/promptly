@@ -4,7 +4,7 @@ import { globalRateLimiter } from "@/lib/rate-limit";
 import db from "@/lib/db";
 import { flattenTree } from "@/modules/helpers/normalize-tree";
 import { streamText } from "ai";
-import { vertex, DEFAULT_MODEL, VALID_MODEL_IDS } from "@/lib/ai";
+import { vertex, DEFAULT_MODEL, VALID_MODEL_IDS, getModelTokenCost } from "@/lib/ai";
 import { SYSTEM_PROMPT } from "@/prompt";
 
 export const maxDuration = 300;
@@ -66,8 +66,17 @@ export async function POST(req: Request) {
 
     const messages = `USER REQUEST: ${userPrompt}\n\nCURRENT CODEBASE:\n${JSON.stringify(flatFiles)}`;
 
+    const tokenCost = getModelTokenCost(selectedModel);
+
+    if (dbUser.tokens < tokenCost) {
+      return NextResponse.json(
+        { error: "Insufficient tokens", code: "OUT_OF_TOKENS" },
+        { status: 402 },
+      );
+    }
+
     const result = streamText({
-      model: vertex(DEFAULT_MODEL),
+      model: vertex(selectedModel),
       system: SYSTEM_PROMPT,
       prompt: messages,
 
@@ -76,9 +85,9 @@ export async function POST(req: Request) {
           try {
             await db.user.update({
               where: { clerkId: userId },
-              data: { tokens: dbUser.tokens - 10 },
+              data: { tokens: dbUser.tokens - tokenCost },
             });
-            console.log(`Deducted 10 tokens from user ${userId}`);
+            console.log(`Deducted ${tokenCost} tokens (${selectedModel}) from user ${userId}`);
           } catch (dbError) {
             console.error("Failed to deduct tokens after stream:", dbError);
           }

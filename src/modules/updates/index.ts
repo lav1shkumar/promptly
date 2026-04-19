@@ -9,9 +9,10 @@ async function generateProjectName(prompt: string): Promise<string> {
   try {
     const { text } = await generateText({
       model: vertex(LIGHT_MODEL),
+      temperature: 0.8,
       system:
-        "You are a professional project naming assistant. Generate a short, catchy, 2-3 word project name based on the user's prompt. Do not use quotes, periods, or extra words. Just the name.",
-      prompt: `Prompt: ${prompt}`,
+        "You are a professional project naming assistant. Generate a unique, highly creative, and distinct 2-3 word project name based on the user's prompt. Avoid generic terms. Do not use quotes, periods, or extra words. Just the name.",
+      prompt: `User Prompt: ${prompt}`,
     });
     return text.trim() || "Untitled Project";
   } catch (error) {

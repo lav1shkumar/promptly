@@ -130,7 +130,10 @@ const ModelSelector = ({ value, onChange, disabled }: ModelSelectorProps) => {
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-                      {model.description}
+                      {model.description} <br />
+                      <span className="text-primary/70 font-medium">
+                        {model.tokenCost} tokens/request
+                      </span>
                     </p>
                   </div>
                   {isSelected && (

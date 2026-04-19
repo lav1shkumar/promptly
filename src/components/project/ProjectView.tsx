@@ -5,12 +5,10 @@ import { CodeView } from "@/components/project/code-view";
 import { FileSystemTree, WebContainer } from "@webcontainer/api";
 import { applyPatchesToTree } from "@/modules/helpers/normalize-tree";
 import { downloadZip } from "@/modules/helpers/build-zip";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import PromptInput from "@/components/project/prompt-input";
 import {
-  ArrowLeft,
-  ArrowRight,
   Download,
   ExternalLink,
   FileEdit,
@@ -57,6 +55,7 @@ const ProjectView = ({
   const [activeTab1, setActiveTab1] = useState<"terminal" | "chat">("chat");
   const [activeTab2, setActiveTab2] = useState<"preview" | "code">("preview");
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [currentUrl, setCurrentUrl] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [messages, setMessages] = useState<any[]>([]);
   const hasAutoTriggered = useRef(false);
@@ -214,6 +213,7 @@ const ProjectView = ({
     webcontainer.on("server-ready", (port, url) => {
       // console.log("Server ready");
       setDevServerUrl(url);
+      setCurrentUrl(url);
     });
   };
 
@@ -378,35 +378,11 @@ const ProjectView = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    iframeRef.current?.contentWindow?.postMessage(
-                      { type: "nav", action: "back" },
-                      "*",
-                    )
-                  }
-                  title="Back"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    iframeRef.current?.contentWindow?.postMessage(
-                      { type: "nav", action: "forward" },
-                      "*",
-                    )
-                  }
-                  title="Forward"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
                   onClick={() => {
-                    if (iframeRef.current)
-                      iframeRef.current.src = iframeRef.current.src;
+                    if (devServerUrl && iframeRef.current?.src) {
+                      iframeRef.current.src = devServerUrl;
+                      setCurrentUrl(devServerUrl);
+                    }
                   }}
                   title="Refresh"
                 >
@@ -425,7 +401,9 @@ const ProjectView = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => downloadZip(files)}
+                  onClick={() => {
+                    downloadZip(files);
+                  }}
                 >
                   <Download className="w-4 h-4 mr-1" />
                   Download
@@ -434,14 +412,32 @@ const ProjectView = ({
             </div>
             <div className="flex-1 min-h-0 relative">
               <div
-                className="absolute inset-0"
-                style={{ display: activeTab2 === "preview" ? "block" : "none" }}
+                className="absolute inset-0 flex flex-col"
+                style={{ display: activeTab2 === "preview" ? "flex" : "none" }}
               >
+                {devServerUrl && (
+                  <div className="flex items-center px-2 py-1.5 border-b border-border bg-muted/30 gap-2 shrink-0">
+                    <div className="flex-1 flex items-center bg-background border border-input rounded-md px-2.5 h-8 focus-within:ring-1 focus-within:ring-primary shadow-sm">
+                      <input
+                        type="text"
+                        className="w-full text-xs font-mono bg-transparent border-none outline-none text-muted-foreground focus:text-foreground"
+                        value={currentUrl}
+                        onChange={(e) => setCurrentUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (iframeRef.current)
+                              iframeRef.current.src = currentUrl;
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
                 {devServerUrl && (
                   <iframe
                     ref={iframeRef}
                     src={devServerUrl}
-                    className="h-full w-full"
+                    className="flex-1 w-full border-none bg-white"
                   />
                 )}
                 {!devServerUrl && (

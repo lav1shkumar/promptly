@@ -12,6 +12,9 @@ import {
   Search,
   Layout,
   Trash2,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import { Spinner } from "../ui/spinner";
 import { toast } from "sonner";
@@ -27,6 +30,8 @@ const ProjectHistory = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -102,6 +107,46 @@ const ProjectHistory = () => {
     }
   };
 
+  const handleRename = async (e: React.MouseEvent, projectId: string) => {
+    e.stopPropagation();
+    
+    if (!editingName.trim()) return;
+    
+    try {
+      const res = await fetch("/api/project/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId, name: editingName }),
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setProjects((prev) =>
+          prev.map((p) => (p.id === projectId ? { ...p, name: editingName } : p))
+        );
+        toast.success("Project renamed successfully");
+        setEditingProjectId(null);
+      } else {
+        toast.error(data.error || "Failed to rename project");
+      }
+    } catch (error) {
+      console.error("Rename error:", error);
+      toast.error("An error occurred while renaming");
+    }
+  };
+
+  const startEditing = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    setEditingProjectId(project.id);
+    setEditingName(project.name);
+  };
+
+  const cancelEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingProjectId(null);
+    setEditingName("");
+  };
+
   if (isLoading) {
     return (
       <div className="w-full py-20 flex flex-col items-center justify-center gap-3">
@@ -160,6 +205,14 @@ const ProjectHistory = () => {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    onClick={(e) => startEditing(e, project)}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => handleDelete(e, project.id)}
                     disabled={deletingIds.has(project.id)}
@@ -175,9 +228,30 @@ const ProjectHistory = () => {
               </div>
 
               <div className="space-y-1">
-                <h3 className="font-bold text-base truncate pr-6 group-hover:text-primary transition-colors">
-                  {project.name}
-                </h3>
+                {editingProjectId === project.id ? (
+                  <div className="flex items-center gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      autoFocus
+                      value={editingName}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                        if (e.key === "Enter") handleRename(e as unknown as React.MouseEvent, project.id);
+                        if (e.key === "Escape") cancelEditing(e as unknown as React.MouseEvent);
+                      }}
+                      className="h-8 text-sm flex w-full rounded-md border border-input bg-transparent px-3 py-1 shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    />
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={(e) => handleRename(e, project.id)}>
+                      <Check className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={cancelEditing}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <h3 className="font-bold text-base truncate pr-6 group-hover:text-primary transition-colors">
+                    {project.name}
+                  </h3>
+                )}
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5" />
                   <span>{formatTimeAgo(project.updatedAt)}</span>
