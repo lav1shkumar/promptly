@@ -80,9 +80,9 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log(
-      `Reserved ${tokenCost} tokens (${selectedModel}) for user ${userId}`,
-    );
+    // console.log(
+    //   `Reserved ${tokenCost} tokens (${selectedModel}) for user ${userId}`,
+    // );
 
     const flatFiles = flattenTree(files);
     const messages = `USER REQUEST: ${userPrompt}\n\nCURRENT CODEBASE:\n${JSON.stringify(flatFiles)}`;
@@ -93,16 +93,16 @@ export async function POST(req: Request) {
       prompt: messages,
 
       onFinish: async ({ finishReason }) => {
-        // Refund tokens if the generation did not complete successfully
-        if (finishReason !== "stop") {
+        // Refund tokens if the generation failed due to an error, allowing 'length' to be billed
+        if (finishReason === "error") {
           try {
             await db.user.update({
               where: { clerkId: userId },
               data: { tokens: { increment: tokenCost } },
             });
-            console.log(
-              `Refunded ${tokenCost} tokens (${selectedModel}) to user ${userId} — finishReason: ${finishReason}`,
-            );
+            // console.log(
+            //   `Refunded ${tokenCost} tokens (${selectedModel}) to user ${userId} — finishReason: ${finishReason}`,
+            // );
           } catch (dbError) {
             console.error(
               "Failed to refund tokens after non-billable stream:",

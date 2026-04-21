@@ -68,9 +68,9 @@ const Navbar = () => {
                 <span>{tokens}</span>
                 <Link
                   href="/pricing"
-                  className="text-xs ml-1 text-muted-foreground hover:text-foreground no-underline"
+                  className="text-xs ml-1 text-muted-foreground hover:text-foreground no-underline capitalize"
                 >
-                  {tier === "FREE" ? "Upgrade" : tier}
+                  {tier}
                 </Link>
               </div>
             )}

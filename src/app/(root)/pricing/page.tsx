@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { getUser } from "@/modules/auth/actions";
 
 export default function PricingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [currentTier, setCurrentTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    getUser().then((res) => {
+      if (res.success && res.user) {
+        setCurrentTier(res.user.tier);
+      }
+    });
+  }, []);
 
   const handleUpgrade = async (tier: string) => {
     setLoading(tier);
@@ -22,9 +32,19 @@ export default function PricingPage() {
         throw new Error("Failed to upgrade");
       }
 
-      toast.success(`Successfully upgraded to ${tier}`);
+      const label = tier.charAt(0) + tier.slice(1).toLowerCase();
+      toast.success(
+        tier === "FREE"
+          ? `Downgraded to ${label}`
+          : `Successfully upgraded to ${label}`,
+      );
+      setCurrentTier(tier);
+
+      window.dispatchEvent(new Event("userUpdated"));
+
       router.refresh();
     } catch (error) {
+      console.error("Upgrade failed:", error);
       toast.error("Failed to upgrade tier");
     } finally {
       setLoading(null);
@@ -61,10 +81,16 @@ export default function PricingPage() {
           <Button
             className="mt-8 w-full"
             variant="outline"
-            onClick={() => handleUpgrade("FREE")}
-            disabled={loading !== null}
+            onClick={() => {
+              if (currentTier !== "FREE") handleUpgrade("FREE");
+            }}
+            disabled={loading !== null || currentTier === "FREE"}
           >
-            {loading === "FREE" ? "Updating..." : "Downgrade to Free"}
+            {loading === "FREE"
+              ? "Updating..."
+              : currentTier === "FREE"
+                ? "Current plan"
+                : "Downgrade to Free"}
           </Button>
         </div>
 
@@ -88,10 +114,18 @@ export default function PricingPage() {
           </ul>
           <Button
             className="mt-8 w-full bg-white text-black hover:bg-zinc-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
-            onClick={() => handleUpgrade("PRO")}
-            disabled={loading !== null}
+            onClick={() => {
+              if (currentTier !== "PRO") handleUpgrade("PRO");
+            }}
+            disabled={loading !== null || currentTier === "PRO"}
           >
-            {loading === "PRO" ? "Updating..." : "Get Pro"}
+            {loading === "PRO"
+              ? "Updating..."
+              : currentTier === "PRO"
+                ? "Current plan"
+                : currentTier === "ENTERPRISE"
+                  ? "Downgrade to Pro"
+                  : "Get Pro"}
           </Button>
         </div>
 
@@ -115,10 +149,16 @@ export default function PricingPage() {
           <Button
             className="mt-8 w-full"
             variant="outline"
-            onClick={() => handleUpgrade("ENTERPRISE")}
-            disabled={loading !== null}
+            onClick={() => {
+              if (currentTier !== "ENTERPRISE") handleUpgrade("ENTERPRISE");
+            }}
+            disabled={loading !== null || currentTier === "ENTERPRISE"}
           >
-            {loading === "ENTERPRISE" ? "Updating..." : "Get Enterprise"}
+            {loading === "ENTERPRISE"
+              ? "Updating..."
+              : currentTier === "ENTERPRISE"
+                ? "Current plan"
+                : "Get Enterprise"}
           </Button>
         </div>
       </div>
