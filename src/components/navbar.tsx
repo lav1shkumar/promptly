@@ -47,7 +47,9 @@ const Navbar = () => {
             width={50}
             height={50}
             className="block dark:hidden cursor-pointer"
-            onClick={() => router.push("/")}
+            onClick={() => {
+              window.location.href = "/";
+            }}
           />
           <Image
             src="/logo-dark.svg"
@@ -55,7 +57,9 @@ const Navbar = () => {
             width={50}
             height={50}
             className="hidden dark:block cursor-pointer"
-            onClick={() => router.push("/")}
+            onClick={() => {
+              window.location.href = "/";
+            }}
           />
         </div>
         <div className="flex items-center gap-2">
@@ -74,12 +78,12 @@ const Navbar = () => {
               <div className="flex items-center gap-2 border px-3 py-1.5 rounded-full text-sm font-medium mr-2">
                 <Coins className="w-4 h-4 text-yellow-500" />
                 <span>{tokens}</span>
-                <Link
+                <a
                   href="/pricing"
                   className="text-xs ml-1 text-muted-foreground hover:text-foreground no-underline capitalize"
                 >
                   {tier}
-                </Link>
+                </a>
               </div>
             )}
             <UserButton />
