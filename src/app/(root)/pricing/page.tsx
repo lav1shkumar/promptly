@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { getUser } from "@/modules/auth/actions";
 import Script from "next/script";
 
 declare global {
@@ -18,34 +17,32 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const handlePayment = (tier: string): Promise<boolean> => {
-    return new Promise(async (resolve) => {
-      if (!ready || !window.Razorpay) {
-        toast.warning("Please wait for the page to load");
-        resolve(false);
-        return;
+  const handlePayment = async (tier: string): Promise<boolean> => {
+    if (!ready || !window.Razorpay) {
+      toast.warning("Please wait for the page to load");
+      return false;
+    }
+
+    try {
+      const res = await fetch("/api/payment/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tier: tier,
+        }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        toast.error(data.error || "Failed to create order");
+        return false;
       }
 
-      try {
-        const res = await fetch("/api/payment/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            tier: tier,
-          }),
-        });
+      const order = data.order;
 
-        const data = await res.json();
-        if (!data.success) {
-          toast.error(data.error || "Failed to create order");
-          resolve(false);
-          return;
-        }
-
-        const order = data.order;
-
+      return await new Promise<boolean>((resolve) => {
         const options = {
           key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
           amount: order.amount,
@@ -81,17 +78,18 @@ export default function PricingPage() {
 
         const rzp = new window.Razorpay(options);
         rzp.open();
-      } catch (error) {
-        console.error("Payment failed:", error);
-        toast.error("Payment initialization failed");
-        resolve(false);
-      }
-    });
+      });
+    } catch (error) {
+      console.error("Payment failed:", error);
+      toast.error("Payment initialization failed");
+      return false;
+    }
   };
 
   const handleUpgrade = async (tier: string) => {
     setLoading(tier);
     try {
+      let successMessage = "";
       if (tier === "FREE") {
         const res = await fetch("/api/upgrade", {
           method: "POST",
@@ -100,7 +98,7 @@ export default function PricingPage() {
         });
 
         if (!res.ok) throw new Error("Failed to downgrade");
-        toast.success("Successfully downgraded to Free plan");
+        successMessage = "Successfully downgraded to Free plan";
       } else {
         const paymentSuccess = await handlePayment(tier);
         if (!paymentSuccess) {
@@ -109,11 +107,12 @@ export default function PricingPage() {
         }
 
         const label = tier.charAt(0) + tier.slice(1).toLowerCase();
-        toast.success(`Successfully upgraded to ${label}`);
+        successMessage = `Successfully upgraded to ${label}`;
       }
 
       window.dispatchEvent(new Event("userUpdated"));
-      router.refresh();
+      await router.refresh();
+      toast.success(successMessage);
     } catch (error) {
       console.error("Upgrade failed:", error);
       toast.error("Failed to update plan");
@@ -131,10 +130,10 @@ export default function PricingPage() {
       />
       <div className="text-center space-y-4 mb-16">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Purchase Tokens
+          Upgrade Your Plan
         </h1>
         <p className="text-xl text-muted-foreground">
-          Buy more tokens to supercharge your AI workflows. No subscriptions.
+          Supercharge your AI workflows with daily token limits. Cancel anytime.
         </p>
       </div>
 
@@ -147,11 +146,14 @@ export default function PricingPage() {
           </div>
           <div className="mt-8">
             <span className="text-5xl font-bold">₹0</span>
+            <span className="text-xl text-muted-foreground">/mo</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ 50 Tokens included</li>
+            <li className="flex items-center gap-2">✓ 50 Tokens / day</li>
+            <li className="flex items-center gap-2">
+              ✓ Up to 1,500 Tokens / mo
+            </li>
             <li className="flex items-center gap-2">✓ Basic AI Access</li>
-            <li className="flex items-center gap-2">✓ Community Support</li>
           </ul>
           <Button className="mt-8 w-full" variant="outline" disabled={true}>
             Default Plan
@@ -163,39 +165,45 @@ export default function PricingPage() {
           <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl uppercase tracking-wider">
             Most Popular
           </div>
-          <h2 className="text-2xl font-bold">250 Tokens Pack</h2>
+          <h2 className="text-2xl font-bold">Pro Tier</h2>
           <div className="mt-4 text-sm opacity-80">
-            A quick refill for serious builders and makers.
+            For serious builders and makers.
           </div>
           <div className="mt-8">
-            <span className="text-5xl font-bold">₹999</span>
+            <span className="text-5xl font-bold">₹499</span>
+            <span className="text-xl opacity-80">/mo</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ +250 Tokens</li>
+            <li className="flex items-center gap-2">✓ 500 Tokens / day</li>
+            <li className="flex items-center gap-2">
+              ✓ Up to 7,500 Tokens / mo
+            </li>
             <li className="flex items-center gap-2">✓ Advanced AI Models</li>
-            <li className="flex items-center gap-2">✓ Priority Support</li>
           </ul>
           <Button
             className="mt-8 w-full bg-white text-black hover:bg-zinc-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
             onClick={() => handleUpgrade("PRO")}
             disabled={loading !== null}
           >
-            {loading === "PRO" ? "Processing..." : "Buy 250 Tokens"}
+            {loading === "PRO" ? "Processing..." : "Upgrade to Pro"}
           </Button>
         </div>
 
         {/* ENTERPRISE PACK */}
         <div className="flex flex-col p-8 bg-card text-card-foreground shadow-lg rounded-xl border">
-          <h2 className="text-2xl font-bold">1000 Tokens Pack</h2>
+          <h2 className="text-2xl font-bold">Enterprise Tier</h2>
           <div className="mt-4 text-sm text-muted-foreground">
             For heavy usage and scaling teams.
           </div>
           <div className="mt-8">
-            <span className="text-5xl font-bold">₹2999</span>
+            <span className="text-5xl font-bold">₹1499</span>
+            <span className="text-xl text-muted-foreground">/mo</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ +1,000 Tokens</li>
-            <li className="flex items-center gap-2">✓ Custom APIs</li>
+            <li className="flex items-center gap-2">✓ 2000 Tokens / day</li>
+            <li className="flex items-center gap-2">
+              ✓ Up to 30,000 Tokens / mo
+            </li>
             <li className="flex items-center gap-2">
               ✓ 24/7 Dedicated Support
             </li>
@@ -206,7 +214,9 @@ export default function PricingPage() {
             onClick={() => handleUpgrade("ENTERPRISE")}
             disabled={loading !== null}
           >
-            {loading === "ENTERPRISE" ? "Processing..." : "Buy 1000 Tokens"}
+            {loading === "ENTERPRISE"
+              ? "Processing..."
+              : "Upgrade to Enterprise"}
           </Button>
         </div>
       </div>

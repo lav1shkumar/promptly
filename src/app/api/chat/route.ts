@@ -11,6 +11,7 @@ import {
   VALID_MODEL_IDS,
   getModelTokenCost,
 } from "@/lib/ai-models";
+import { TIER_MONTHLY_LIMITS } from "@/lib/utils";
 
 export const maxDuration = 300;
 
@@ -63,20 +64,34 @@ export async function POST(req: Request) {
 
     const tokenCost = getModelTokenCost(selectedModel);
 
+    const monthlyLimit = TIER_MONTHLY_LIMITS[dbUser.tier];
+
+    if (dbUser.monthlyTokensUsed + tokenCost > monthlyLimit) {
+      return NextResponse.json(
+        { error: "Monthly limit reached", code: "OUT_OF_MONTHLY_TOKENS" },
+        { status: 402 },
+      );
+    }
+
     // Atomic token reservation
     const reserveResult = await db.user.updateMany({
       where: {
         clerkId: userId,
         tokens: { gte: tokenCost },
+        monthlyTokensUsed: { lte: monthlyLimit - tokenCost },
       },
       data: {
         tokens: { decrement: tokenCost },
+        monthlyTokensUsed: { increment: tokenCost },
       },
     });
 
     if (reserveResult.count === 0) {
       return NextResponse.json(
-        { error: "Insufficient tokens", code: "OUT_OF_TOKENS" },
+        {
+          error: "Insufficient tokens or monthly limit reached",
+          code: "OUT_OF_TOKENS",
+        },
         { status: 402 },
       );
     }
@@ -99,7 +114,10 @@ export async function POST(req: Request) {
           try {
             await db.user.update({
               where: { clerkId: userId },
-              data: { tokens: { increment: tokenCost } },
+              data: {
+                tokens: { increment: tokenCost },
+                monthlyTokensUsed: { decrement: tokenCost },
+              },
             });
             // console.log(
             //   `Refunded ${tokenCost} tokens (${selectedModel}) to user ${userId} — finishReason: ${finishReason}`,

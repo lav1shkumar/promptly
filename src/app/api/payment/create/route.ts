@@ -10,8 +10,8 @@ const razorpay = new Razorpay({
 });
 
 const PRICES = {
-  PRO: 999,
-  ENTERPRISE: 2999,
+  PRO: 499,
+  ENTERPRISE: 1499,
 };
 
 export async function POST(req: Request) {

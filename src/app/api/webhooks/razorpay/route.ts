@@ -36,19 +36,27 @@ export async function POST(req: Request) {
         });
 
         if (payment && payment.status !== "completed") {
-          let tokens = 50;
+          const { TIER_DAILY_LIMITS } = await import("@/lib/utils");
+          let tokens: number = TIER_DAILY_LIMITS.FREE;
           if (tier === "PRO") {
-            tokens = 250;
+            tokens = TIER_DAILY_LIMITS.PRO;
           } else if (tier === "ENTERPRISE") {
-            tokens = 1000;
+            tokens = TIER_DAILY_LIMITS.ENTERPRISE;
           }
+
+          const now = new Date();
+          const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
           await db.$transaction([
             db.user.update({
               where: { clerkId: userId },
               data: {
                 tier: tier as Tier,
-                tokens: { increment: tokens },
+                tokens: tokens,
+                lastTokenRefresh: now,
+                planExpiresAt: expiresAt,
+                monthlyTokensUsed: 0,
+                lastMonthlyReset: now,
               },
             }),
             db.payment.update({
