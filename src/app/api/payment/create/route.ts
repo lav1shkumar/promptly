@@ -29,12 +29,30 @@ export async function POST(req: Request) {
 
     const amount = PRICES[tier as key_of_PRICES];
 
+    const user = await db.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 });
+    }
+
     const order = await razorpay.orders.create({
       amount: amount * 100,
       currency: "INR",
       notes: {
         userId,
         tier,
+      },
+    });
+
+    await db.payment.create({
+      data: {
+        razorpayOrderId: order.id,
+        amount: amount,
+        tier,
+        status: "created",
+        userId: user.id,
       },
     });
 

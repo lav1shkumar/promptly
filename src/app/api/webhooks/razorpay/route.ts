@@ -31,23 +31,40 @@ export async function POST(req: Request) {
       const { userId, tier } = order.notes;
 
       if (userId && tier) {
-        let tokens = 50;
-        if (tier === "PRO") {
-          tokens = 250;
-        } else if (tier === "ENTERPRISE") {
-          tokens = 1000;
-        }
-
-        // Update user tier
-        await db.user.update({
-          where: { clerkId: userId },
-          data: {
-            tier: tier as Tier,
-            tokens: tokens,
-          },
+        const payment = await db.payment.findUnique({
+          where: { razorpayOrderId: order.id },
         });
 
-        console.log(`Webhook: Successfully upgraded user ${userId} to ${tier}`);
+        if (payment && payment.status !== "completed") {
+          let tokens = 50;
+          if (tier === "PRO") {
+            tokens = 250;
+          } else if (tier === "ENTERPRISE") {
+            tokens = 1000;
+          }
+
+          await db.$transaction([
+            db.user.update({
+              where: { clerkId: userId },
+              data: {
+                tier: tier as Tier,
+                tokens: { increment: tokens },
+              },
+            }),
+            db.payment.update({
+              where: { id: payment.id },
+              data: { status: "completed" },
+            }),
+          ]);
+
+          console.log(
+            `Webhook: Successfully upgraded user ${userId} to ${tier}`,
+          );
+        } else {
+          console.log(
+            `Webhook: Order ${order.id} already processed or not found`,
+          );
+        }
       }
     }
 

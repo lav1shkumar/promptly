@@ -4,7 +4,6 @@ const nextConfig = {
   /* config options here */
   // output: "standalone",
   reactCompiler: true,
-  allowedDevOrigins: ["58bb-103-211-16-175.ngrok-free.app"],
   async headers() {
     return [
       {

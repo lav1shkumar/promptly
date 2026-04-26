@@ -28,6 +28,24 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: "Missing metadata" });
       }
 
+      const payment = await db.payment.findUnique({
+        where: { razorpayOrderId: razorpay_order_id },
+      });
+
+      if (!payment) {
+        return NextResponse.json({
+          success: false,
+          error: "Payment not found",
+        });
+      }
+
+      if (payment.status === "completed") {
+        return NextResponse.json({
+          success: true,
+          message: "Already processed",
+        });
+      }
+
       let tokens = 50;
       if (tier === "PRO") {
         tokens = 250;
@@ -35,13 +53,22 @@ export async function POST(req: Request) {
         tokens = 1000;
       }
 
-      await db.user.update({
-        where: { clerkId: userId },
-        data: {
-          tier: tier as Tier,
-          tokens: tokens,
-        },
-      });
+      await db.$transaction([
+        db.user.update({
+          where: { clerkId: userId },
+          data: {
+            tier: tier as Tier,
+            tokens: { increment: tokens },
+          },
+        }),
+        db.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: "completed",
+            razorpayPaymentId: razorpay_payment_id,
+          },
+        }),
+      ]);
 
       console.log(`Successfully upgraded user ${userId} to ${tier}`);
       return NextResponse.json({ success: true });
@@ -51,6 +78,9 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error("Verification error:", error);
-    return NextResponse.json({ success: false, error: "Internal server error" });
+    return NextResponse.json({
+      success: false,
+      error: "Internal server error",
+    });
   }
 }

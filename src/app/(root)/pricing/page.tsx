@@ -146,92 +146,74 @@ export default function PricingPage() {
       />
       <div className="text-center space-y-4 mb-16">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          Simple, transparent pricing
+          Purchase Tokens
         </h1>
         <p className="text-xl text-muted-foreground">
-          Unlock more tokens to supercharge your AI workflows.
+          Buy more tokens to supercharge your AI workflows. No subscriptions.
         </p>
       </div>
 
       <div className="grid md:grid-cols-3 gap-8 w-full max-w-5xl">
-        {/* FREE TIER */}
-        <div className="flex flex-col p-8 bg-card text-card-foreground shadow-lg rounded-xl border">
-          <h2 className="text-2xl font-bold">Free</h2>
+        {/* FREE TIER / INFO */}
+        <div className="flex flex-col p-8 bg-card text-card-foreground shadow-lg rounded-xl border opacity-80">
+          <h2 className="text-2xl font-bold">Starter</h2>
           <div className="mt-4 text-sm text-muted-foreground">
-            Perfect for getting started.
+            Included with every new account.
           </div>
           <div className="mt-8">
             <span className="text-5xl font-bold">₹0</span>
-            <span className="text-muted-foreground">/month</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ 50 Tokens</li>
+            <li className="flex items-center gap-2">✓ 50 Tokens included</li>
             <li className="flex items-center gap-2">✓ Basic AI Access</li>
             <li className="flex items-center gap-2">✓ Community Support</li>
           </ul>
           <Button
             className="mt-8 w-full"
             variant="outline"
-            onClick={() => {
-              if (currentTier !== "FREE") handleUpgrade("FREE");
-            }}
-            disabled={loading !== null || currentTier === "FREE"}
+            disabled={true}
           >
-            {loading === "FREE"
-              ? "Updating..."
-              : currentTier === "FREE"
-                ? "Current plan"
-                : "Downgrade to Free"}
+            Default Plan
           </Button>
         </div>
 
-        {/* PRO TIER */}
+        {/* PRO PACK */}
         <div className="flex flex-col p-8 bg-black text-white dark:bg-card dark:text-card-foreground shadow-2xl rounded-xl border relative transform md:-translate-y-4">
           <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl uppercase tracking-wider">
             Most Popular
           </div>
-          <h2 className="text-2xl font-bold">Pro</h2>
+          <h2 className="text-2xl font-bold">250 Tokens Pack</h2>
           <div className="mt-4 text-sm opacity-80">
-            For serious builders and makers.
+            A quick refill for serious builders and makers.
           </div>
           <div className="mt-8">
             <span className="text-5xl font-bold">₹999</span>
-            <span className="opacity-80">/month</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ 250 Tokens</li>
+            <li className="flex items-center gap-2">✓ +250 Tokens</li>
             <li className="flex items-center gap-2">✓ Advanced AI Models</li>
             <li className="flex items-center gap-2">✓ Priority Support</li>
           </ul>
           <Button
             className="mt-8 w-full bg-white text-black hover:bg-zinc-200 dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white"
-            onClick={() => {
-              if (currentTier !== "PRO") handleUpgrade("PRO");
-            }}
-            disabled={loading !== null || currentTier === "PRO"}
+            onClick={() => handleUpgrade("PRO")}
+            disabled={loading !== null}
           >
-            {loading === "PRO"
-              ? "Updating..."
-              : currentTier === "PRO"
-                ? "Current plan"
-                : currentTier === "ENTERPRISE"
-                  ? "Downgrade to Pro"
-                  : "Get Pro"}
+            {loading === "PRO" ? "Processing..." : "Buy 250 Tokens"}
           </Button>
         </div>
 
-        {/* ENTERPRISE TIER */}
+        {/* ENTERPRISE PACK */}
         <div className="flex flex-col p-8 bg-card text-card-foreground shadow-lg rounded-xl border">
-          <h2 className="text-2xl font-bold">Enterprise</h2>
+          <h2 className="text-2xl font-bold">1000 Tokens Pack</h2>
           <div className="mt-4 text-sm text-muted-foreground">
-            For teams needing scale.
+            For heavy usage and scaling teams.
           </div>
           <div className="mt-8">
             <span className="text-5xl font-bold">₹2999</span>
-            <span className="text-muted-foreground">/month</span>
           </div>
           <ul className="mt-8 space-y-4 flex-1">
-            <li className="flex items-center gap-2">✓ 1,000 Tokens</li>
+            <li className="flex items-center gap-2">✓ +1,000 Tokens</li>
             <li className="flex items-center gap-2">✓ Custom APIs</li>
             <li className="flex items-center gap-2">
               ✓ 24/7 Dedicated Support
@@ -240,16 +222,10 @@ export default function PricingPage() {
           <Button
             className="mt-8 w-full"
             variant="outline"
-            onClick={() => {
-              if (currentTier !== "ENTERPRISE") handleUpgrade("ENTERPRISE");
-            }}
-            disabled={loading !== null || currentTier === "ENTERPRISE"}
+            onClick={() => handleUpgrade("ENTERPRISE")}
+            disabled={loading !== null}
           >
-            {loading === "ENTERPRISE"
-              ? "Updating..."
-              : currentTier === "ENTERPRISE"
-                ? "Current plan"
-                : "Get Enterprise"}
+            {loading === "ENTERPRISE" ? "Processing..." : "Buy 1000 Tokens"}
           </Button>
         </div>
       </div>
