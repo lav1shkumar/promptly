@@ -4,11 +4,6 @@ import { auth } from "@clerk/nextjs/server";
 import db from "@/lib/db";
 import { Tier } from "@prisma/client";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
-
 const PRICES = {
   PRO: 499,
   ENTERPRISE: 1499,
@@ -16,6 +11,10 @@ const PRICES = {
 
 export async function POST(req: Request) {
   try {
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID!,
+      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
     const { userId } = await auth();
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
