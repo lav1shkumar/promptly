@@ -109,9 +109,9 @@ const ProjectHistory = () => {
 
   const handleRename = async (e: React.MouseEvent, projectId: string) => {
     e.stopPropagation();
-    
+
     if (!editingName.trim()) return;
-    
+
     try {
       const res = await fetch("/api/project/rename", {
         method: "POST",
@@ -119,10 +119,12 @@ const ProjectHistory = () => {
         body: JSON.stringify({ projectId, name: editingName }),
       });
       const data = await res.json();
-      
+
       if (data.success) {
         setProjects((prev) =>
-          prev.map((p) => (p.id === projectId ? { ...p, name: editingName } : p))
+          prev.map((p) =>
+            p.id === projectId ? { ...p, name: editingName } : p,
+          ),
         );
         toast.success("Project renamed successfully");
         setEditingProjectId(null);
@@ -193,7 +195,7 @@ const ProjectHistory = () => {
         {projects.map((project) => (
           <div
             key={project.id}
-            onClick={() => router.push(`/project/${project.id}`)}
+            onClick={() => (window.location.href = `/project/${project.id}`)}
             className="group relative cursor-pointer flex flex-col justify-between p-5 rounded-xl border border-border bg-card hover:bg-accent/40 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
           >
             <div className="space-y-3">
@@ -229,21 +231,41 @@ const ProjectHistory = () => {
 
               <div className="space-y-1">
                 {editingProjectId === project.id ? (
-                  <div className="flex items-center gap-2 mb-2" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-2 mb-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <input
                       autoFocus
                       value={editingName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditingName(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEditingName(e.target.value)
+                      }
                       onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                        if (e.key === "Enter") handleRename(e as unknown as React.MouseEvent, project.id);
-                        if (e.key === "Escape") cancelEditing(e as unknown as React.MouseEvent);
+                        if (e.key === "Enter")
+                          handleRename(
+                            e as unknown as React.MouseEvent,
+                            project.id,
+                          );
+                        if (e.key === "Escape")
+                          cancelEditing(e as unknown as React.MouseEvent);
                       }}
                       className="h-8 text-sm flex w-full rounded-md border border-input bg-transparent px-3 py-1 shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     />
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10" onClick={(e) => handleRename(e, project.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10"
+                      onClick={(e) => handleRename(e, project.id)}
+                    >
                       <Check className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={cancelEditing}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={cancelEditing}
+                    >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>

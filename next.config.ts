@@ -7,7 +7,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/project/(.*)",
+        source: "/project/:path*",
         headers: [
           {
             key: "Cross-Origin-Embedder-Policy",
@@ -28,15 +28,6 @@ const nextConfig = {
           },
           {
             key: "Cross-Origin-Opener-Policy",
-            value: "unsafe-none",
-          },
-        ],
-      },
-      {
-        source: "/pricing",
-        headers: [
-          {
-            key: "Cross-Origin-Embedder-Policy",
             value: "unsafe-none",
           },
         ],

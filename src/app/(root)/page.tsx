@@ -21,7 +21,7 @@ export default function Page() {
       }
       toast.success(newProject.message);
 
-      router.push(`/project/${newProject.project}`);
+      window.location.href = `/project/${newProject.project}`;
     } catch (error) {
       toast.error("Failed to start dev server");
     }
