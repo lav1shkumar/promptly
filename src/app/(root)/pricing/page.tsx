@@ -16,24 +16,10 @@ declare global {
 export default function PricingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
-  const [currentTier, setCurrentTier] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    getUser().then((res) => {
-      if (res.success && res.user) {
-        setCurrentTier(res.user.tier);
-      }
-    });
-  }, []);
 
   const handlePayment = (tier: string): Promise<boolean> => {
     return new Promise(async (resolve) => {
-      if (currentTier === tier) {
-        toast.error("Already on this plan");
-        resolve(false);
-        return;
-      }
       if (!ready || !window.Razorpay) {
         toast.warning("Please wait for the page to load");
         resolve(false);
@@ -126,7 +112,6 @@ export default function PricingPage() {
         toast.success(`Successfully upgraded to ${label}`);
       }
 
-      setCurrentTier(tier);
       window.dispatchEvent(new Event("userUpdated"));
       router.refresh();
     } catch (error) {
@@ -168,11 +153,7 @@ export default function PricingPage() {
             <li className="flex items-center gap-2">✓ Basic AI Access</li>
             <li className="flex items-center gap-2">✓ Community Support</li>
           </ul>
-          <Button
-            className="mt-8 w-full"
-            variant="outline"
-            disabled={true}
-          >
+          <Button className="mt-8 w-full" variant="outline" disabled={true}>
             Default Plan
           </Button>
         </div>
