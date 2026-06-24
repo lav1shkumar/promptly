@@ -16,14 +16,7 @@ import { TIER_MONTHLY_LIMITS } from "@/lib/utils";
 export const maxDuration = 300;
 
 const model = createVertex({
-  project: process.env.GOOGLE_VERTEX_PROJECT,
-  location: process.env.GOOGLE_VERTEX_LOCATION,
-  googleAuthOptions: {
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY,
-    },
-  },
+  apiKey: process.env.GOOGLE_VERTEX_API_KEY,
 });
 
 export async function POST(req: Request) {

@@ -1,5 +1,5 @@
-export const DEFAULT_MODEL = "gemini-2.5-pro";
-export const LIGHT_MODEL = "gemini-3.1-flash-lite-preview";
+export const DEFAULT_MODEL = "gemini-3.5-flash";
+export const LIGHT_MODEL = "gemini-3.1-flash-lite";
 
 export const AI_MODELS = [
   {
@@ -7,24 +7,17 @@ export const AI_MODELS = [
     name: "Gemini 3.1 Pro",
     description: "Most capable model",
     badge: "Pro+",
-    tokenCost: 30,
+    tokenCost: 20,
   },
   {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
+    id: "gemini-3.5-flash",
+    name: "Gemini 3.5 Flash",
     description: "Balanced capability and cost",
     badge: "Pro",
     tokenCost: 15,
   },
   {
-    id: "gemini-3.0-flash",
-    name: "Gemini 3 Flash",
-    description: "Balanced performance",
-    badge: "Flash",
-    tokenCost: 7,
-  },
-  {
-    id: "gemini-3.1-flash-lite-preview",
+    id: "gemini-3.1-flash-lite",
     name: "Gemini 3.1 Flash Lite",
     description: "Fast and lightweight",
     badge: "Lite",
